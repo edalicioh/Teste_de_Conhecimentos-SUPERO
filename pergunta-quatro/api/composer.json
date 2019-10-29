@@ -1,0 +1,20 @@
+{
+    "name": "hazen/data-click",
+    "description": "Este e um projeto de Teste de Conhecimentos - SUPERO",
+    "license": "NTI",
+    "authors": [
+        {
+            "name": "hazen",
+            "email": "edalicio@outlook.com"
+        }
+    ],
+    "autoload": {
+        "psr-4": {
+            "App\\": "app/",
+            "Core\\": "core/"
+        }
+    },
+    "require": {
+        "php": ">=5.4"
+    }
+}

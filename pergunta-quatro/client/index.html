@@ -1,0 +1,253 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta content="text/html; charset=UTF-8; X-Content-Type-Options=nosniff" http-equiv="Content-Type" />
+
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
+        integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+
+    <title>Hello, world!</title>
+</head>
+
+<body>
+
+    <div class="container mt-2 ">
+        <div class="row justify-content-center mb-5">
+            <div class="col-md-8">
+                <div class="card">
+                    <div class="card-body">
+                        <div id="msg"></div>
+                        <form>
+                            <div class="form-group">
+                                <label for="title">Titulo da Tarefa</label>
+                                <input type="text" class="form-control" id="title" placeholder="Digite um titulo ...">
+                            </div>
+                            <div class="form-group">
+                                <label for="body">Descrição da Tarefa</label>
+                                <textarea class="form-control" id="body" rows="3"
+                                    placeholder="Digite a descrição ..."></textarea>
+                            </div>
+                            <div class="row">
+                                <div class="col-6">
+                                    <label for="priority">Prioridade da Tarefa</label>
+                                    <select class="form-control" id="priority">
+                                        <option disabled selected>Escolha a prioridade da tarefa</option>
+                                        <option value="1" class="bg-success">Baixo</option>
+                                        <option value="2" class="bg-warning">Medio</option>
+                                        <option value="3" class="bg-danger">Auto</option>
+                                    </select>
+                                </div>
+                                <div class="col-6">
+                                    <label for="status">Status da Tarefa</label>
+                                    <select class="form-control" id="status">
+                                        <option disabled selected>Escolha a status da tarefa</option>
+                                        <option value="Parado">Parado</option>
+                                        <option value="Em andamento">Em andamento</option>
+                                        <option value="Concluido">Concluido</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div id="btn-submit"></div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row justify-content-center">
+            <div class="col-xl-8 col-sm-12">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th scope="col">#</th>
+                            <th scope="col">Status</th>
+                            <th scope="col">Prioridade</th>
+                            <th scope="col">Titulo</th>
+                            <th scope="col">Descrição</th>
+                            <th scope="col"></th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.3/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/js/bootstrap.min.js"></script>
+    <script>
+        getTarefas()
+        $("#btn-gravar").click(function (e) {
+          
+        })
+
+        $('tbody').click((e) => {
+            let tipo = e.target.classList[3]
+            let id = e.target.value
+            if (tipo == "btn-edit") {
+                editTarefa(id)
+            }
+            if (tipo == "btn-delete") {
+                deleteTarefa(id)
+            }
+        });
+        $('#btn-submit').click((e) => {
+            e.preventDefault();
+            let title = $("#title").val();
+            let body = $("#body").val();
+            let priority = $("#priority").val();
+            let status = $("#status").val();
+
+            if (
+                title !== null &&
+                body !== null &&
+                priority !== null &&
+                status !== null
+            ) {
+                let tipo = e.target.id
+                let data = { title, body, priority, status }
+                
+                if(tipo == "btn-update" ) {
+                    let id = e.target.value
+                    updateTarefa(id , data)
+                }
+                if(tipo == "btn-gravar") {
+                    postTarefa(data)
+                }    
+            } else {
+                msgErro()
+            }            
+        });
+
+
+        function getTarefas() {
+            $.ajax({
+                type: "GET",
+                url: "http://localhost:8000",
+                dataType: "json",
+                success: function (res) {
+
+                    res.sort(function(a, b) {
+                        return b.priority - a.priority;
+                    })
+                    $("#btn-gravar").remove();
+                    $("#btn-update").remove();
+                    $("#btn-submit").append(`<button id="btn-gravar" class="btn btn-primary mt-2">Gravar &#10004;</button>`);
+                    $.each(res, function (key, value) {
+                        $('tbody').append(`
+                         <tr class="tarefa">
+                            <th scope="row">${key + 1}</th>
+                            <td>${value.status}</td>
+                            <td>${codePrioridade( value.priority )}</td>
+                            <td>${value.title}</td>
+                            <td>${value.body}</td>
+                            <td>
+                                <button type="button" class="btn btn-info btn-sm btn-edit" value="${value.id}">&#9998;</button>
+                                <button type="button" class="btn btn-danger btn-sm btn-delete" value="${value.id}">&#10006;</button>
+                            </td>
+                        </tr> `);
+                    });
+                }
+            });
+        }
+        function postTarefa(data) {
+            $.ajax({
+                type: "POST",
+                url: "http://127.0.0.1:8000/store",
+                data: data,
+                success: function (res) {
+                    msgSuccess("Tarefa salva com sucesso!!!")
+                    
+                    $('.tarefa').remove();
+                    $("#title").val('');
+                    $("#body").val('');
+                    $("#priority").val('');
+                    $("#status").val('');
+                    getTarefas()
+                }
+            })
+        }
+        function editTarefa(id) {
+            $.ajax({
+                type: "POST",
+                url: `http://127.0.0.1:8000/${id}`,
+                success: function (res) {
+                    let data = jQuery.parseJSON(res);
+                    $("#btn-gravar").remove();
+                    $("#btn-submit").append(`<button id="btn-update" value="${id}" class="btn btn-primary mt-2">Atualizar &#10004;</button>`);
+                    $("#title").val(data.title);
+                    $("#body").val(data.body);
+                    $("#priority").val(data.priority);
+                    $("#status").val(data.status);
+
+                }
+            })
+        }
+        
+        function updateTarefa(id , data) {
+            $.ajax({
+                type: "POST",
+                url: `http://127.0.0.1:8000/${id}/update`,
+                data: data,
+                success: function (res) {
+                    msgSuccess("Tarefa atualizado com sucesso!!!")
+                    $('.tarefa').remove();
+                    $("#title").val('');
+                    $("#body").val('');
+                    $("#priority").val('');
+                    $("#status").val('');
+                    getTarefas()
+                }
+            })
+        }
+        function deleteTarefa(id) {
+            $.ajax({
+                type: "POST",
+                url: `http://127.0.0.1:8000/${id}/delete`,
+                success: function (res) {
+                    msgSuccess("Tarefa deleta com sucesso!!!")
+                    $('.tarefa').remove();
+                    getTarefas()
+                }
+            })
+        }
+        function msgSuccess(text) {
+            $("#msg").append(` 
+                    <div class="alert alert-success" id="msg-alert-success" role="alert">
+                        ${text}
+                    </div>` );
+            setTimeout(() => {
+                $("#msg-alert-success").remove();
+            }, 2000);
+        }
+        function msgErro() {
+            $("#msg").append(` 
+                    <div class="alert alert-danger" id="msg-alert-danger" role="alert">
+                        Todos os campos devem ser preenchidos
+                    </div>` );
+            setTimeout(() => {
+                $("#msg-alert-danger").remove();
+            }, 2000);
+        }
+        function codePrioridade(data){
+            switch (data) {
+                case "1":
+                    return "Baixo"
+                    break;
+                case "2":
+                    return "Medio"
+                    break;
+                case "3":
+                    return "Alto"
+                    break;
+            }
+        }
+    </script>
+</body>
+
+</html>
